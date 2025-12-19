@@ -425,10 +425,10 @@ const TrigoApp: React.FC<TrigoAppProps> = ({ isDarkMode }) => {
          </div>
       )}
 
-      <div className="flex-1 p-6 grid grid-cols-12 gap-6 min-h-0 overflow-hidden">
+      <div className="flex-1 p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0 overflow-y-auto lg:overflow-hidden">
         
         {/* LEFT: INPUTS */}
-        <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto pr-0 lg:pr-2 custom-scrollbar h-auto lg:h-full">
            
            {/* Mode Select */}
            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
@@ -590,7 +590,7 @@ const TrigoApp: React.FC<TrigoAppProps> = ({ isDarkMode }) => {
         </div>
 
         {/* CENTER: CANVAS WITH TOOLBAR */}
-        <div className="col-span-12 lg:col-span-6 flex flex-col h-full gap-4">
+        <div className="lg:col-span-6 flex flex-col h-[60vh] lg:h-full gap-4 order-first lg:order-none">
            
            {/* Canvas Container */}
            <div className="flex-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 p-4 shadow-inner relative overflow-hidden">
@@ -721,12 +721,12 @@ const TrigoApp: React.FC<TrigoAppProps> = ({ isDarkMode }) => {
         </div>
 
         {/* RIGHT: GENERATOR */}
-        <div className="col-span-12 lg:col-span-3 flex flex-col h-full">
+        <div className="lg:col-span-3 flex flex-col h-auto lg:h-full lg:overflow-y-auto custom-scrollbar">
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col h-full">
                 <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-orange-50/50 dark:bg-orange-900/20 rounded-t-xl">
                    <h2 className="font-semibold text-orange-900 dark:text-orange-400">📚 Gerar Lista</h2>
                 </div>
-                <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="p-6 space-y-6">
                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                        Configure a quantidade de questões por tipo para compor a lista.
                    </p>

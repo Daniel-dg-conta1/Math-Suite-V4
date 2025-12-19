@@ -326,8 +326,12 @@ const TriangleCanvas = forwardRef<HTMLCanvasElement, TriangleCanvasProps>(({
             const u = norm(vec(V, N1));
             const v = norm(vec(V, N2));
             const bisector = norm(add(u, v));
-            // Adjust distance based on fontScale to prevent overlap with edges as text grows
-            const dist = 75 * fontScale; 
+            
+            // --- DYNAMIC POSITIONING ---
+            const baseDist = 75 * fontScale; // Default base distance scaled
+            // Add extra clearance for acute angles (< 20 degrees) to prevent overlap
+            const dist = val < 20 ? baseDist * 1.35 : baseDist;
+            
             const pos = add(V, scaleVec(bisector, dist));
             ctx.fillText(`${fmt(val)}°`, pos.x, pos.y);
         };

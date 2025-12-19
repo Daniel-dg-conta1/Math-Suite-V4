@@ -306,7 +306,7 @@ const drawTriangleInPDF = (doc: jsPDF, triangle: TriangleData, cx: number, cy: n
     const Cx = tx(coords.Cx); const Cy = ty(coords.Cy);
     
     doc.setDrawColor(0);
-    doc.setLineWidth(0.5); // Increased from 0.3 for clearer resolution/sharpness perception
+    doc.setLineWidth(0.5); 
     doc.setFillColor(248, 250, 252); // Light gray fill
     doc.triangle(Ax, Ay, Bx, By, Cx, Cy, 'FD'); // Fill and Draw
 
@@ -314,7 +314,7 @@ const drawTriangleInPDF = (doc: jsPDF, triangle: TriangleData, cx: number, cy: n
     const isRight = (ang: number) => Math.abs(ang - 90) < 0.1;
     
     const drawRightAngle = (V: {x:number, y:number}, N1: {x:number, y:number}, N2: {x:number, y:number}) => {
-       const size = 3.5; // Slightly larger
+       const size = 3.5; 
        
        // Calculate normalized direction vectors
        const dx1 = N1.x - V.x;
@@ -362,7 +362,7 @@ const drawTriangleInPDF = (doc: jsPDF, triangle: TriangleData, cx: number, cy: n
     else if (isRight(triangle.C)) drawRightAngle({x:Cx, y:Cy}, {x:Ax, y:Ay}, {x:Bx, y:By});
     
     // Labels Vertex (A, B, C)
-    doc.setFontSize(11); // Increased from 8
+    doc.setFontSize(11); 
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
     doc.text('A', Ax-2, Ay-2);
@@ -370,25 +370,26 @@ const drawTriangleInPDF = (doc: jsPDF, triangle: TriangleData, cx: number, cy: n
     doc.text('C', Cx-1, Cy-3);
 
     // Labels Sides (a, b, c) - Placed at midpoints with offset
-    doc.setFontSize(10); // Increased from 7
+    doc.setFontSize(10); 
     doc.setTextColor(50, 50, 50); 
     doc.setFont('helvetica', 'normal');
 
-    // Side a connects B and C
-    const midAx = (Bx + Cx) / 2;
-    const midAy = (By + Cy) / 2;
-    // Simple nudge to right
-    doc.text('a', midAx + 2, midAy, { align: 'center' });
+    // Helper to add label with minor offset away from center
+    const mathCenter = { x: (Ax+Bx+Cx)/3, y: (Ay+By+Cy)/3 };
+    const labelSide = (label: string, p1: {x:number, y:number}, p2: {x:number, y:number}) => {
+        const mid = { x: (p1.x + p2.x)/2, y: (p1.y + p2.y)/2 };
+        // Direction away from center
+        const dx = mid.x - mathCenter.x;
+        const dy = mid.y - mathCenter.y;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const nx = len > 0 ? dx/len : 0;
+        const ny = len > 0 ? dy/len : 0;
+        
+        const off = 3;
+        doc.text(label, mid.x + nx * off, mid.y + ny * off, { align: 'center' });
+    };
 
-    // Side b connects A and C
-    const midBx = (Ax + Cx) / 2;
-    const midBy = (Ay + Cy) / 2;
-    // Simple nudge to left
-    doc.text('b', midBx - 2, midBy, { align: 'center' });
-
-    // Side c connects A and B (Base)
-    const midCx = (Ax + Bx) / 2;
-    const midCy = (Ay + By) / 2;
-    // Simple nudge down
-    doc.text('c', midCx, midCy + 4, { align: 'center' });
+    labelSide('a', {x:Bx, y:By}, {x:Cx, y:Cy});
+    labelSide('b', {x:Ax, y:Ay}, {x:Cx, y:Cy});
+    labelSide('c', {x:Ax, y:Ay}, {x:Bx, y:By});
 };

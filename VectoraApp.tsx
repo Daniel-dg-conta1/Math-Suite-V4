@@ -465,13 +465,13 @@ const VectoraApp: React.FC<VectoraAppProps> = ({ isDarkMode }) => {
             <h1 className="font-bold text-lg text-[#005A7A] dark:text-sky-400">Vectora Pro</h1>
           </div>
         </div>
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Simulador & Gerador PDF</div>
+        <div className="text-sm font-medium text-gray-600 dark:text-gray-400 hidden sm:block">Simulador & Gerador PDF</div>
       </header>
 
-      <div className="flex-1 p-6 grid grid-cols-12 gap-6 min-h-0 overflow-hidden">
+      <div className="flex-1 p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0 overflow-y-auto lg:overflow-hidden">
         
         {/* LEFT: CONTROLS */}
-        <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar h-full">
+        <div className="lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto pr-0 lg:pr-2 custom-scrollbar h-auto lg:h-full">
           
           {/* MODE SELECTOR */}
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 p-5">
@@ -487,21 +487,21 @@ const VectoraApp: React.FC<VectoraAppProps> = ({ isDarkMode }) => {
                   <div className="grid grid-cols-2 gap-2 mb-2">
                      <div>
                         <label className="text-[9px] text-teal-600 dark:text-teal-400 font-bold">Mag</label>
-                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" value={desiredResultant.inputMag} onChange={e => handleDesiredChange('mag', e.target.value)} />
+                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" type="text" inputMode="decimal" value={desiredResultant.inputMag} onChange={e => handleDesiredChange('mag', e.target.value)} />
                      </div>
                      <div>
                         <label className="text-[9px] text-teal-600 dark:text-teal-400 font-bold">Ângulo</label>
-                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" value={desiredResultant.inputAng} onChange={e => handleDesiredChange('ang', e.target.value)} />
+                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" type="text" inputMode="decimal" value={desiredResultant.inputAng} onChange={e => handleDesiredChange('ang', e.target.value)} />
                      </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                      <div>
                         <label className="text-[9px] text-teal-600 dark:text-teal-400 font-bold">X</label>
-                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" value={desiredResultant.inputX} onChange={e => handleDesiredChange('x', e.target.value)} />
+                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" type="text" inputMode="decimal" value={desiredResultant.inputX} onChange={e => handleDesiredChange('x', e.target.value)} />
                      </div>
                      <div>
                         <label className="text-[9px] text-teal-600 dark:text-teal-400 font-bold">Y</label>
-                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" value={desiredResultant.inputY} onChange={e => handleDesiredChange('y', e.target.value)} />
+                        <input className="w-full text-xs p-1 border rounded bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700" type="text" inputMode="decimal" value={desiredResultant.inputY} onChange={e => handleDesiredChange('y', e.target.value)} />
                      </div>
                   </div>
                </div>
@@ -527,28 +527,28 @@ const VectoraApp: React.FC<VectoraAppProps> = ({ isDarkMode }) => {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                        {v.inputType === 'cartesian' ? (
                          <>
-                           <input value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="X" />
-                           <input value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Y" />
+                           <input type="text" inputMode="decimal" value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="X" />
+                           <input type="text" inputMode="decimal" value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Y" />
                          </>
                        ) : v.inputType === 'angle' ? (
                          <>
-                           <input value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Mag" />
-                           <input value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Ang" />
+                           <input type="text" inputMode="decimal" value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Mag" />
+                           <input type="text" inputMode="decimal" value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" placeholder="Ang" />
                          </>
                        ) : (
                          <div className="col-span-2 space-y-2 mt-1">
                            <div>
                               <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Módulo (hipotenusa)</label>
-                              <input value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
+                              <input type="text" inputMode="decimal" value={v.param1 ?? ''} onChange={e => updateVector(v.id, {param1: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
                            </div>
                            <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Cateto horizontal (H)</label>
-                                <input value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
+                                <input type="text" inputMode="decimal" value={v.param2 ?? ''} onChange={e => updateVector(v.id, {param2: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
                               </div>
                               <div>
                                 <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Cateto vertical (V)</label>
-                                <input value={v.param3 ?? ''} onChange={e => updateVector(v.id, {param3: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
+                                <input type="text" inputMode="decimal" value={v.param3 ?? ''} onChange={e => updateVector(v.id, {param3: e.target.value})} className="w-full p-1 border rounded bg-gray-50 dark:bg-slate-800 dark:text-white dark:border-slate-600" />
                               </div>
                            </div>
                          </div>
@@ -695,7 +695,7 @@ const VectoraApp: React.FC<VectoraAppProps> = ({ isDarkMode }) => {
         </div>
 
         {/* CENTER: CANVAS */}
-        <div className="col-span-12 lg:col-span-6 flex flex-col h-full relative" ref={canvasContainerRef}>
+        <div className="lg:col-span-6 flex flex-col h-[60vh] lg:h-full relative order-first lg:order-none" ref={canvasContainerRef}>
            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
               <button onClick={() => setGridMode(g => g === 'none' ? 'light' : g === 'light' ? 'strong' : 'none')} className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-300 hover:text-blue-600 text-xs font-bold">
                  Grid: {gridMode}
@@ -756,7 +756,7 @@ const VectoraApp: React.FC<VectoraAppProps> = ({ isDarkMode }) => {
         </div>
 
         {/* RIGHT: GENERATOR */}
-        <div className="col-span-12 lg:col-span-3 flex flex-col gap-6 pl-2 h-full overflow-y-auto custom-scrollbar">
+        <div className="lg:col-span-3 flex flex-col gap-6 pl-0 lg:pl-2 h-auto lg:h-full lg:overflow-y-auto custom-scrollbar">
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 flex flex-col">
              <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-purple-50/50 dark:bg-purple-900/20 rounded-t-xl">
                <h2 className="font-semibold text-purple-900 dark:text-purple-400">📝 Gerador de Lista</h2>

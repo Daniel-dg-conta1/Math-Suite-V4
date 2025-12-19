@@ -1,4 +1,3 @@
-
 import { DEG_TO_RAD, RAD_TO_DEG } from './math';
 import { TriangleData, TriangleMode } from '../types';
 
@@ -58,7 +57,7 @@ export const solveTriangle = (
 
       case 'SAS': // Lado-Ângulo-Lado (v1=b, v2=AngA, v3=c)
         b = v1; A = v2; c = v3;
-        if (A >= 180) return invalidResult("O ângulo deve ser menor que 180°.");
+        if (A <= 0 || A >= 180) return invalidResult("O ângulo deve estar entre 0° e 180°.");
         // Law of Cosines for 'a'
         a = Math.sqrt(b**2 + c**2 - 2*b*c*Math.cos(toRad(A)));
         // Law of Sines/Cosines for B
@@ -69,6 +68,7 @@ export const solveTriangle = (
       case 'ASA': // Ângulo-Lado-Ângulo (v1=AngA, v2=c, v3=AngB)
         // Correcting mapping based on App inputs: Inputs: ['Ângulo A', 'Lado c', 'Ângulo B']
         A = v1; c = v2; B = v3;
+        if (A <= 0 || A >= 180 || B <= 0 || B >= 180) return invalidResult("Os ângulos devem estar entre 0° e 180°.");
         if (A + B >= 180) return invalidResult("A soma dos ângulos fornecidos deve ser menor que 180°.");
         C = 180 - A - B;
         // Law of Sines
@@ -78,6 +78,7 @@ export const solveTriangle = (
 
       case 'AAS': // Lado-Ângulo-Ângulo (v1=AngA, v2=AngB, v3=a)
         A = v1; B = v2; a = v3;
+        if (A <= 0 || A >= 180 || B <= 0 || B >= 180) return invalidResult("Os ângulos devem estar entre 0° e 180°.");
         if (A + B >= 180) return invalidResult("A soma dos ângulos fornecidos deve ser menor que 180°.");
         C = 180 - A - B;
         // Law of Sines
@@ -105,7 +106,7 @@ export const solveTriangle = (
 
       case 'Right_CatAng': // Triângulo Retângulo (v1=Cateto(a), v2=Ângulo(A))
         a = v1; A = v2;
-        if (A >= 90) return invalidResult("O ângulo deve ser agudo (< 90°).");
+        if (A <= 0 || A >= 90) return invalidResult("O ângulo deve ser agudo (entre 0° e 90°).");
         C = 90;
         B = 90 - A;
         c = a / Math.sin(toRad(A));
@@ -114,7 +115,7 @@ export const solveTriangle = (
 
       case 'Right_HypAng': // Triângulo Retângulo (v1=Hipotenusa(c), v2=Ângulo(A))
         c = v1; A = v2;
-        if (A >= 90) return invalidResult("O ângulo deve ser agudo (< 90°).");
+        if (A <= 0 || A >= 90) return invalidResult("O ângulo deve ser agudo (entre 0° e 90°).");
         if (c <= 0) return invalidResult("A hipotenusa deve ser maior que zero.");
         C = 90;
         B = 90 - A;
@@ -131,24 +132,33 @@ export const solveTriangle = (
      return invalidResult("Combinação de valores inválida para um triângulo real.");
   }
   
+  // Extra safety check for angles
+  if (A <= 0 || B <= 0 || C <= 0 || A >= 180 || B >= 180 || C >= 180) {
+     return invalidResult("Ângulos calculados inválidos. Verifique as entradas.");
+  }
+  
+  if (Math.abs((A + B + C) - 180) > 0.5) {
+     return invalidResult("Soma dos ângulos não é 180°. Triângulo impossível.");
+  }
+
   if (a <= 0 || b <= 0 || c <= 0) return invalidResult("Os lados calculados resultaram em valores nulos ou negativos.");
 
   // Metadata
   const s = (a + b + c) / 2;
-  const area = Math.sqrt(s * (s - a) * (s - b) * (s - c));
-  const height = (2 * area) / c; // Height relative to side c (base)
+  const area = Math.sqrt(Math.max(0, s * (s - a) * (s - b) * (s - c))); // Ensure non-negative
+  const height = c > 0 ? (2 * area) / c : 0; // Height relative to side c (base)
 
   // Detailed calculations
   const heights = {
-    a: clean((2 * area) / a),
-    b: clean((2 * area) / b),
-    c: clean((2 * area) / c)
+    a: a > 0 ? clean((2 * area) / a) : 0,
+    b: b > 0 ? clean((2 * area) / b) : 0,
+    c: c > 0 ? clean((2 * area) / c) : 0
   };
 
   const medians = {
-    a: clean(0.5 * Math.sqrt(2*b*b + 2*c*c - a*a)),
-    b: clean(0.5 * Math.sqrt(2*a*a + 2*c*c - b*b)),
-    c: clean(0.5 * Math.sqrt(2*a*a + 2*b*b - c*c))
+    a: clean(0.5 * Math.sqrt(Math.max(0, 2*b*b + 2*c*c - a*a))),
+    b: clean(0.5 * Math.sqrt(Math.max(0, 2*a*a + 2*c*c - b*b))),
+    c: clean(0.5 * Math.sqrt(Math.max(0, 2*a*a + 2*b*b - c*c)))
   };
 
   const bisectors = {
@@ -189,6 +199,7 @@ export const getTriangleCoords = (t: TriangleData) => {
 
 export const getCircumcircle = (t: TriangleData, coords: {Ax:number, Ay:number, Bx:number, By:number, Cx:number, Cy:number}) => {
    // R = a*b*c / 4*Area
+   if (t.area <= 0.0001) return { Ox: 0, Oy: 0, R: 0 };
    const R = (t.a * t.b * t.c) / (4 * t.area);
    
    // Circumcenter O

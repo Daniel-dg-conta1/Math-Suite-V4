@@ -10,6 +10,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [currentModule, setCurrentModule] = useState<'home' | 'vectora' | 'trigo'>('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // --- THEME STATE ---
   const [darkMode, setDarkMode] = useState(false);
@@ -22,6 +23,20 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Responsive Sidebar Check
+  useEffect(() => {
+    const handleResize = () => {
+       if (window.innerWidth < 1024) {
+          setIsSidebarOpen(false);
+       } else {
+          setIsSidebarOpen(true);
+       }
+    };
+    handleResize(); // Init
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleTheme = () => setDarkMode(!darkMode);
 
@@ -125,9 +140,20 @@ const App: React.FC = () => {
   // --- MAIN APP UI ---
   return (
     <div className={`flex h-screen w-full bg-[#F5F7FA] dark:bg-slate-950 overflow-hidden font-sans animate-in fade-in duration-300 transition-colors`}>
+      
+      {/* Mobile Menu Toggle (Visible only on small screens) */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg shadow-lg hover:bg-slate-800 transition-colors"
+      >
+        <span className="text-xl font-bold">≡</span>
+      </button>
+
       {/* Sidebar Navigation */}
-      <div className="w-64 flex flex-col bg-slate-900 text-white border-r border-slate-800 shadow-2xl z-50 shrink-0">
-        <div className="p-6 border-b border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors" onClick={() => setCurrentModule('home')}>
+      <div 
+        className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative w-64 h-full flex flex-col bg-slate-900 text-white border-r border-slate-800 shadow-2xl z-40 shrink-0 transition-transform duration-300 ease-in-out`}
+      >
+        <div className="p-6 border-b border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors" onClick={() => { setCurrentModule('home'); if(window.innerWidth < 1024) setIsSidebarOpen(false); }}>
           <div className="flex items-center gap-3">
              <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-lg text-white shadow-lg">M</div>
              <h1 className="font-bold text-lg tracking-tight text-white">Math Suite <span className="text-xs bg-slate-800 px-1 py-0.5 rounded text-slate-400 font-normal border border-slate-700">Pro</span></h1>
@@ -136,7 +162,7 @@ const App: React.FC = () => {
 
         <nav className="flex-1 p-4 space-y-2">
           <button 
-            onClick={() => setCurrentModule('home')}
+            onClick={() => { setCurrentModule('home'); if(window.innerWidth < 1024) setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group active:scale-[0.98] ${currentModule === 'home' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:translate-x-1'}`}
           >
             <span className="flex items-center justify-center w-6 h-6">🏠</span>
@@ -146,7 +172,7 @@ const App: React.FC = () => {
           <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Módulos</div>
 
           <button 
-            onClick={() => setCurrentModule('vectora')}
+            onClick={() => { setCurrentModule('vectora'); if(window.innerWidth < 1024) setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group active:scale-[0.98] ${currentModule === 'vectora' ? 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg shadow-blue-900/50 text-white font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:translate-x-1'}`}
           >
             <span className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${currentModule === 'vectora' ? 'bg-white/20' : 'bg-slate-800 group-hover:bg-slate-700'}`}>↗</span>
@@ -154,7 +180,7 @@ const App: React.FC = () => {
           </button>
 
           <button 
-            onClick={() => setCurrentModule('trigo')}
+            onClick={() => { setCurrentModule('trigo'); if(window.innerWidth < 1024) setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group active:scale-[0.98] ${currentModule === 'trigo' ? 'bg-gradient-to-r from-teal-600 to-teal-500 shadow-lg shadow-teal-900/50 text-white font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white hover:translate-x-1'}`}
           >
             <span className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${currentModule === 'trigo' ? 'bg-white/20' : 'bg-slate-800 group-hover:bg-slate-700'}`}>○</span>
@@ -190,13 +216,21 @@ const App: React.FC = () => {
         </div>
       </div>
 
+      {/* Overlay for mobile sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
       {/* Main Content Area */}
       {/* Key prop ensures component unmount/remount triggering CSS animations on switch */}
       <div key={currentModule} className="flex-1 h-full overflow-hidden relative bg-slate-50 dark:bg-slate-950 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out">
         {currentModule === 'home' && (
           <div className="h-full w-full overflow-y-auto p-8 md:p-12 flex flex-col items-center justify-center">
              
-             <div className="text-center max-w-2xl mb-12">
+             <div className="text-center max-w-2xl mb-12 pt-10 lg:pt-0">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-wide mb-4 animate-in zoom-in duration-500">
                   Bem-vindo, {user.name.split(' ')[0]}
                 </div>
@@ -208,7 +242,7 @@ const App: React.FC = () => {
                 </p>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl pb-10">
                 {/* VECTORA CARD */}
                 <button 
                   onClick={() => setCurrentModule('vectora')}
@@ -250,7 +284,7 @@ const App: React.FC = () => {
                 </button>
              </div>
 
-             <div className="mt-16 text-slate-400 dark:text-slate-600 text-sm font-medium">
+             <div className="mt-8 text-slate-400 dark:text-slate-600 text-sm font-medium">
                 Desenvolvido para Professores e Estudantes do Ensino Médio e Superior.
              </div>
 

@@ -1,10 +1,7 @@
 // Updated pdf generation + diagram rendering with robust pagination and layout fixes.
-// Key fixes:
-// - Accurate pagination so diagrams never get cut at page bottom (full & simple modes).
-// - Respect itemsPerPage in simple mode and auto-adjust if it doesn't fit.
-// - Stable per-page layout calculations using margins and usable area.
-// - Minimal changes elsewhere; only pagination/layout logic adjusted.
-// - IMPROVED RESOLUTION: Thicker lines and larger text.
+// Features:
+// - Accurate pagination
+// - Robust label collision detection (4-stage repositioning) to prevent overlap
 
 import { jsPDF } from 'jspdf';
 import { Exercise, THEME } from '../types';
@@ -12,6 +9,13 @@ import { formatNumber, getMagnitude, getAngle, calculateComponents, getNearestAx
 
 const DIAGRAM_SIZE = 90; // mm
 const CENTER = DIAGRAM_SIZE / 2; // 45mm
+
+// --- COLLISION UTILS ---
+interface Box { x: number; y: number; w: number; h: number; }
+
+const boxesIntersect = (a: Box, b: Box) => {
+  return (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
+};
 
 // --- NATIVE DRAWING HELPERS ---
 
@@ -23,7 +27,7 @@ const toPDFCoords = (x: number, y: number, scaleFactor: number, cx: number, cy: 
 };
 
 const drawArrow = (doc: jsPDF, x1: number, y1: number, x2: number, y2: number, color: string, scale = 1) => {
-  const headLen = 4.0 * scale; // Increased from 3.5
+  const headLen = 4.0 * scale; 
   const angle = Math.atan2(y2 - y1, x2 - x1); 
   
   const tipX = x2;
@@ -34,7 +38,7 @@ const drawArrow = (doc: jsPDF, x1: number, y1: number, x2: number, y2: number, c
   const shaftEndY = tipY - (headLen * shaftLenScale) * Math.sin(angle);
   
   doc.setDrawColor(color);
-  doc.setLineWidth(0.6 * scale); // Increased from 0.4
+  doc.setLineWidth(0.6 * scale); 
   doc.line(x1, y1, shaftEndX, shaftEndY);
   
   const baseCenter = { 
@@ -75,7 +79,7 @@ const drawArc = (doc: jsPDF, cx: number, cy: number, vecX: number, vecY: number,
   const step = diff / segments;
   
   doc.setDrawColor('#64748B');
-  doc.setLineWidth(0.3); // Increased from 0.15
+  doc.setLineWidth(0.3); 
   
   let currA = startDeg;
   
@@ -107,7 +111,7 @@ const drawArc = (doc: jsPDF, cx: number, cy: number, vecX: number, vecY: number,
      y: cy - labelRad * Math.sin(midDeg * DEG_TO_RAD)
   };
   
-  doc.setFontSize(10); // Increased from 9
+  doc.setFontSize(10); 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor('#000000');
   const txt = `${Math.abs(diff).toFixed(0)}°`;
@@ -142,7 +146,7 @@ const renderVectorDiagramToPDF = (doc: jsPDF, offsetX: number, offsetY: number, 
   
   // Axes (Clean, no numbers)
   doc.setDrawColor('#94A3B8');
-  doc.setLineWidth(0.3); // Increased from 0.2
+  doc.setLineWidth(0.3); 
   doc.line(offsetX, cy, offsetX + DIAGRAM_SIZE, cy); // X
   doc.line(cx, offsetY, cx, offsetY + DIAGRAM_SIZE); // Y
   doc.setFontSize(9);
@@ -157,10 +161,15 @@ const renderVectorDiagramToPDF = (doc: jsPDF, offsetX: number, offsetY: number, 
   const visualLayout = calculateVisualLayout(rawList);
   const getVisual = (id: number|string) => visualLayout.find(v => v.id === id) || { vx: 0, vy: 0 };
   
-  const placedLabels: Rect[] = [
-     { x: cx - 5, y: offsetY, w: 10, h: DIAGRAM_SIZE }, 
-     { x: offsetX, y: cy - 3, w: DIAGRAM_SIZE, h: 6 }  
+  // Initial blocked zones (axes labels)
+  const protectionZones: Box[] = [
+     { x: cx - 2, y: offsetY, w: 4, h: DIAGRAM_SIZE }, // Y Axis zone
+     { x: offsetX, y: cy - 2, w: DIAGRAM_SIZE, h: 4 }, // X Axis zone
+     { x: cx - 5, y: offsetY, w: 10, h: 6 }, // 'y' label area
+     { x: offsetX + DIAGRAM_SIZE - 6, y: cy - 4, w: 8, h: 6 } // 'x' label area
   ];
+
+  const placedLabels: Box[] = [...protectionZones];
 
   const drawVecItem = (v: any, isRes: boolean, id: number|string) => {
      const visual = getVisual(id);
@@ -186,41 +195,71 @@ const renderVectorDiagramToPDF = (doc: jsPDF, offsetX: number, offsetY: number, 
      // Labels: Resultant uses "R=<mag>", others use only magnitude
      const labelTxt = isRes ? `R=${magVal}` : `${magVal}`;
 
-     doc.setFontSize(11); // Increased from 10
+     doc.setFontSize(11); 
      doc.setFont('helvetica', isRes ? 'bold' : 'normal'); 
      
      const textW = doc.getTextWidth(labelTxt);
      const textH = 3; 
      
-     // Positioning rules: Q1/Q2 -> above; Q3/Q4 -> below; centered horizontally on arrow tip.
-     let bestX = end.x - (textW / 2); // Center horizontally
+     // 4-STAGE REPOSITIONING ALGORITHM
+     let bestX = end.x;
      let bestY = end.y;
+     let foundSafe = false;
 
-     const verticalOffset = 5; // Increased from 4
+     // Calculate direction unit vector
+     const angleRad = getAngle(visual.vx, visual.vy) * DEG_TO_RAD;
+     const dirX = Math.cos(angleRad);
+     const dirY = -Math.sin(angleRad); // Invert Y for PDF coords (Y down)
 
-     if (v.y > 0) {
-        // Q1 or Q2: Label ABOVE
-        bestY = end.y - verticalOffset;
-     } else {
-        // Q3 or Q4 (y<=0): Label BELOW
-        bestY = end.y + textH + verticalOffset;
+     const attempts = [
+        // Stage 1: Standard offset (radial)
+        { dist: 5, perp: 0 },
+        // Stage 2: Increased radial
+        { dist: 8, perp: 0 },
+        // Stage 3: Radial + Perpendicular shift
+        { dist: 8, perp: 4 },
+        { dist: 8, perp: -4 },
+        // Stage 4: Large offset
+        { dist: 12, perp: 0 }
+     ];
+
+     for (const att of attempts) {
+        // Calculate candidate pos
+        const perpX = -dirY; // Rotate 90 deg
+        const perpY = dirX;
+        
+        let candX = end.x + (dirX * att.dist) + (perpX * att.perp) - (textW/2);
+        let candY = end.y + (dirY * att.dist) + (perpY * att.perp) + (textH/2);
+        
+        // Define bounding box for this candidate
+        const box: Box = { x: candX - 1, y: candY - textH - 1, w: textW + 2, h: textH + 2 };
+        
+        // Check intersection with all existing labels/zones
+        let collision = false;
+        for (const zone of placedLabels) {
+           if (boxesIntersect(box, zone)) {
+              collision = true;
+              break;
+           }
+        }
+        
+        if (!collision) {
+           bestX = candX;
+           bestY = candY;
+           foundSafe = true;
+           placedLabels.push(box);
+           break;
+        }
      }
-     
-     // Minimal Collision Nudging
-     const r: Rect = { x: bestX - 1, y: bestY - textH, w: textW + 2, h: textH + 4 };
-     let collide = false;
-     for (const p of placedLabels) {
-        if (checkCollision(r, p)) { collide = true; break; }
+
+     // Fallback if no safe spot found: Force Stage 1 pos but push it anyway
+     if (!foundSafe) {
+        const att = attempts[0];
+        bestX = end.x + (dirX * att.dist) - (textW/2);
+        bestY = end.y + (dirY * att.dist) + (textH/2);
+        // Register it anyway so subsequent labels try to avoid it
+        placedLabels.push({ x: bestX - 1, y: bestY - textH - 1, w: textW + 2, h: textH + 2 });
      }
-     
-     if (collide) {
-        // Push further in the preferred direction
-        if (v.y > 0) bestY -= 4; // Further up
-        else bestY += 4; // Further down
-     }
-     
-     // Register placement
-     placedLabels.push({ x: bestX - 1, y: bestY - textH, w: textW + 2, h: textH + 4 });
 
      doc.setTextColor(isRes ? THEME.resultant : '#1E293B');
      doc.text(labelTxt, bestX, bestY);
@@ -370,33 +409,22 @@ export const generatePDF = (exercises: Exercise[], isTeacher: boolean, mode: 'fu
     }
 
   } else {
-    // SIMPLE MODE: multiple diagrams per page, user-specified itemsPerPageRequested
-    // We handle itemsPerPageRequested but ensure it physically fits on the page
+    // SIMPLE MODE: multiple diagrams per page
     const cols = 2; // fixed two columns for A4
     const diagWidth = DIAGRAM_SIZE;
     const rowHeight = DIAGRAM_SIZE + 8; // spacing for label/angle
-    // rows per page that physically fit
     const rowsThatFit = Math.floor(usableHeight / rowHeight) || 1;
-    // maximum items that can fit per page given 2 columns
     const maxItemsPerPage = rowsThatFit * cols;
-    // adopt requested itemsPerPage but clamp to maxItemsPerPage
     let itemsPerPage = Math.min(Math.max(1, itemsPerPageRequested), maxItemsPerPage);
-
-    // If requested doesn't fit, reduce to maxItemsPerPage (safe)
     if (itemsPerPageRequested > maxItemsPerPage) {
       itemsPerPage = maxItemsPerPage;
     }
 
-    // Rows to use for the chosen itemsPerPage
-    const rowsPerPage = Math.ceil(itemsPerPage / cols);
-
-    // layout variables
     const marginX = margin.left;
     const availableW = pageWidth - margin.left - margin.right;
     const colWidth = availableW / cols;
     const startY = margin.top;
 
-    // iterate pages
     const totalPages = Math.ceil(exercises.length / itemsPerPage);
     for (let p = 0; p < totalPages; p++) {
       if (p > 0) doc.addPage();
